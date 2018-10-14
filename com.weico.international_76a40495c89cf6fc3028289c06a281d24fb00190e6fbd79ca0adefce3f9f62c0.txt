@@ -1,0 +1,536 @@
+Platform: Android
+Package Name: com.weico.international
+Package Version Name: 2.4.7
+Package Version Code: 2470
+Min Sdk: 15
+Target Sdk: 23
+MD5   : 7149b94f362001dfa51c783911f4b969
+SHA1  : dca2b12201c7d77d630a41f9480f70d4a131fa16
+SHA256: 262390b0cfdaacb40cddbe2965cf384bf3a072cdd9bd75b8dcfad3cf3863b7ec
+Analyze ID: 76a40495c89cf6fc3028289c06a281d24fb00190e6fbd79ca0adefce3f9f62c0
+------------------------------------------------------------------------------------------------
+[高危]  WebView File域同源策略绕过漏洞检测:
+           系统版本API Level小于15时，系统WebView组件存在通用型的同源策略绕过漏洞。应用程序一旦使用WebView并支持File域，就会受到该漏洞的攻击。恶意应用通过该漏洞，可在无特殊权限下盗取应用的任意私有文件，尤其是浏览器，可通过利用该漏洞，获取到浏览器所保存的密码、Cookie、收藏夹以及历史记录等敏感信息，从而造成敏感信息泄露 。
+               Lbolts/WebViewAppLinkResolver$2;->then(Lbolts/Task;)Lbolts/Task;
+               Lcom/sina/weibo/sdk/web/WeiboSdkWebActivity;->initWebView()V
+               Lcom/weico/international/activity/WebviewActivity;->setWebViewSettings()V
+[高危]  WebView远程代码执行漏洞检测:
+           Android API < 17之前版本存在远程代码执行漏洞，该漏洞源于程序没有正确限制使用addJavaScriptInterface方法，当Android 4.2以下版本用户打开恶意链接时（或结合中间人攻击注入恶意js代码），攻击者可以通过Java反射利用该漏洞执行任意Java对象的方法，导致远程代码执行漏洞。漏洞POC演示：https://asecuritysite.com/subjects/chapter46 案例参考：[唱吧android app中存在webview远程执行漏洞](https://wy.tuisec.win/wooyun-2015-0140708.html)
+               => Lbolts/WebViewAppLinkResolver$2;->then(Lbolts/Task;)Lbolts/Task; (0x56) ---> Landroid/webkit/WebView;->addJavascriptInterface(Ljava/lang/Object; Ljava/lang/String;)V
+[中危]  SSL证书弱校验漏洞检测:
+           可能存在漏洞，请手动验证！App在实现X509TrustManager时，默认覆盖google默认的证书检查机制方法：checkClientTrusted、checkServerTrusted和getAcceptedIssuers，会导致中间人攻击漏洞。
+               => Lcom/sina/weibo/sdk/net/HttpsHelper$KeyStoresTrustManagerEX;
+                     -> used by: Lcom/sina/weibo/sdk/net/HttpsHelper;->getSSL(Landroid/content/Context;)Ljavax/net/ssl/SSLSocketFactory;
+[中危]  unzip解压缩（ZipperDown）漏洞检测:
+           [请手动验证是否存在该漏洞！]该漏洞最常见的场景是从服务器下载压缩包，进行资源、代码热更新的时候。Java代码在解压ZIP文件时会使用到ZipEntry类的getName()方法。如果ZIP文件中包含“../”的字符串，该方法返回值里面会原样返回。如果在这里没有进行防护，继续解压缩操作，就会将解压文件创建到其他目录中，实现路径穿越。攻击者可构造恶意zip文件，包含恶意.so文件，被解压的文件将会进行目录跳转被解压到其他目录，覆盖相应文件导致任意代码执行。ZipperDown的本质实际上是路径问题, 利用../来访问任意目录达到写入恶意文件的目的。考虑到需要一定的攻击场景（攻击者需要与受害者处于同一局域网下, 并且劫持通信），评为中危：参考：https://www.tr0y.wang/2018/05/15/zipperdown/index.html
+               => Lcom/tencent/mm/sdk/platformtools/Util;->UnZipFolder(Ljava/lang/String; Ljava/lang/String;)I (0x32) ---> Ljava/util/zip/ZipEntry;->getName()Ljava/lang/String;
+               => Lcom/weico/international/utility/ZipUtil;->decompress(Ljava/io/File; Ljava/util/zip/ZipInputStream;)V (0x34) ---> Ljava/util/zip/ZipEntry;->getName()Ljava/lang/String;
+[低危]  AndroidManifest allowBackup标志检测:
+           android:allowBackup="true"表示应用允许用户通过系统备份工具备份应用数据然后恢复,目前大部分涉及用户隐私与财产安全的应用都不会选择开启此功能,因为这样用户在未root的情况下应用数据短时间内被攻击者复制。
+[低危]  动态注册广播组件暴露风险检测:
+           使用普通带两个参数的registerReceiver()方法动态注册的广播在组件的生命周期里是默认导出的。导出的广播可以导致拒绝服务、数据泄漏或是越权调用。
+               => Lcom/bumptech/glide/manager/DefaultConnectivityMonitor;->register()V (0x30) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/flurry/sdk/jv;->a(Z)V (0x1ee) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/flurry/sdk/kg;->c()V (0x34) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/lib/weico/screen/ScreenBroadcastReceiver;->register(Landroid/content/Context;)V (0x52) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/loc/bu;->l()V (0x66) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/weibo/netcore/Utils/PushAlarmManager;->registerAlarmReceiver(Ljava/lang/String;)V (0x5a) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/weibo/netcore/WeiboNetCore;-><init>(Lcom/sina/weibo/netcore/WeiboNetCore$Builder;)V (0x1a2) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/weibo/netcore/WeiboNetCore;-><init>(Lcom/sina/weibo/netcore/WeiboNetCore$Builder;)V (0x1ee) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/tencent/mm/sdk/platformtools/LBSManager;->requestGpsUpdate()V (0x46) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/tencent/mm/sdk/plugin/MMPluginAPIImpl;->registerQRCodePattern(Ljava/lang/String; Lcom/tencent/mm/sdk/channel/MMessage$CallBack; Ljava/lang/String;)Z (0x3a) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/weico/international/manager/NetworkManager;->init(Landroid/content/Context;)V (0x4c) ---> Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/weico/international/video/FullVideoActivity;->onCreate(Landroid/os/Bundle;)V (0x180) ---> Lcom/weico/international/video/FullVideoActivity;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/push/channel/MPSChannel;->a()V (0x88) ---> Lcom/sina/push/service/SinaPushService;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/push/channel/MPSChannel;->a()V (0x1a0) ---> Lcom/sina/push/service/SinaPushService;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/push/channel/MPSChannel;->a()V (0x1da) ---> Lcom/sina/push/service/SinaPushService;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/push/channel/MPSChannel;->a()V (0x22c) ---> Lcom/sina/push/service/SinaPushService;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/push/service/PushAlarmManager;->a(Ljava/lang/String;)V (0x56) ---> Lcom/sina/push/service/SinaPushService;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/push/service/SinaPushService;->j()V (0x88) ---> Lcom/sina/push/service/SinaPushService;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/sina/push/service/SinaPushService;->j()V (0xdc) ---> Lcom/sina/push/service/SinaPushService;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/weico/international/activity/MainFragmentActivity;->registerReceiver()V (0x22) ---> Lcom/weico/international/activity/MainFragmentActivity;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+               => Lcom/weico/international/activity/MainFragmentActivity$7$2;->onClick(Landroid/content/DialogInterface; I)V (0x44) ---> Lcom/weico/international/activity/BaseFragmentActivity;->registerReceiver(Landroid/content/BroadcastReceiver; Landroid/content/IntentFilter;)Landroid/content/Intent;
+[低危]  日志泄露风险检测:
+           该漏洞危害程度取决于log泄露信息的敏感程度。在APP的开发过程中，为了方便调试，通常会使用log函数输出一些关键流程的信息，这些信息中通常会包含敏感内容，如执行流程、明文的用户名密码等，这会让攻击者更加容易的了解APP内部结构方便破解和攻击，甚至直接获取到有价值的敏感信息。
+               => Lcom/bumptech/glide/load/engine/DecodeJob;->logWithTimeAndKey(Ljava/lang/String; J)V (0x52) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/Engine;->logWithTimeAndKey(Ljava/lang/String; J Lcom/bumptech/glide/load/Key;)V (0x4e) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->dumpUnchecked()V (0xbe) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->getDirty(I I Landroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap; (0xba) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->put(Landroid/graphics/Bitmap;)Z (0xe0) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->put(Landroid/graphics/Bitmap;)Z (0x16a) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/BitmapEncoder;->encode(Lcom/bumptech/glide/load/engine/Resource; Ljava/io/OutputStream;)Z (0x9a) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/TransformationUtils;->fitCenter(Landroid/graphics/Bitmap; Lcom/bumptech/glide/load/engine/bitmap_recycle/BitmapPool; I I)Landroid/graphics/Bitmap; (0x3a) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/TransformationUtils;->fitCenter(Landroid/graphics/Bitmap; Lcom/bumptech/glide/load/engine/bitmap_recycle/BitmapPool; I I)Landroid/graphics/Bitmap; (0xc0) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/TransformationUtils;->fitCenter(Landroid/graphics/Bitmap; Lcom/bumptech/glide/load/engine/bitmap_recycle/BitmapPool; I I)Landroid/graphics/Bitmap; (0x144) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/TransformationUtils;->fitCenter(Landroid/graphics/Bitmap; Lcom/bumptech/glide/load/engine/bitmap_recycle/BitmapPool; I I)Landroid/graphics/Bitmap; (0x19c) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/TransformationUtils;->fitCenter(Landroid/graphics/Bitmap; Lcom/bumptech/glide/load/engine/bitmap_recycle/BitmapPool; I I)Landroid/graphics/Bitmap; (0x1f4) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/TransformationUtils;->fitCenter(Landroid/graphics/Bitmap; Lcom/bumptech/glide/load/engine/bitmap_recycle/BitmapPool; I I)Landroid/graphics/Bitmap; (0x224) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/gif/GifResourceEncoder;->encode(Lcom/bumptech/glide/load/engine/Resource; Ljava/io/OutputStream;)Z (0x186) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/request/GenericRequest;->logV(Ljava/lang/String;)V (0x36) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/request/target/ViewTarget$SizeDeterminer$SizeDeterminerLayoutListener;->onPreDraw()Z (0x3c) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/imagelib/MatrixUtils;->getImageMatrix(Landroid/widget/ImageView;)Landroid/graphics/Matrix; (0x2e) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/imagelib/MatrixUtils;->getImageMatrix(Landroid/widget/ImageView;)Landroid/graphics/Matrix; (0x98) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/imagelib/log/LoggerDefault;->v(Ljava/lang/String; Ljava/lang/String;)I (0x0) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/push/utils/LogUtil;->verbose(Ljava/lang/String;)V (0x1a) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/weibo/sdk/utils/LogUtil;->v(Ljava/lang/String; Ljava/lang/String;)V (0xa6) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->v(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/Object;)V (0xc) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Util;->UnZipFolder(Ljava/lang/String; Ljava/lang/String;)I (0xc) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaMuxerWrapper;->startInput()V (0xa) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaMuxerWrapper;->stopInput()V (0xa) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->v(Ljava/lang/String;)V (0x32) ---> Landroid/util/Log;->v(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0x1c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0xd4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xdc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x134) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x120) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->inject(Ljava/lang/Object; Ljava/lang/Object; Lbutterknife/ButterKnife$Finder;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->reset(Ljava/lang/Object;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/Glide;->buildModelLoader(Ljava/lang/Class; Ljava/lang/Class; Landroid/content/Context;)Lcom/bumptech/glide/load/model/ModelLoader; (0x1e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x78) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0xd6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x17a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifencoder/AnimatedGifEncoder;->getImagePixels()V (0x1a0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/data/HttpUrlFetcher;->getStreamForSuccessfulRequest(Ljava/net/HttpURLConnection;)Ljava/io/InputStream; (0x7c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/CacheLoader;->load(Lcom/bumptech/glide/load/Key; Lcom/bumptech/glide/load/ResourceDecoder; I I)Lcom/bumptech/glide/load/engine/Resource; (0x3c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/EngineRunnable;->decodeFromCache()Lcom/bumptech/glide/load/engine/Resource; (0x5e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimToSize(I)V (0xc4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->clearMemory()V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->getDirty(I I Landroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap; (0x60) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimMemory(I)V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator;-><init>(Landroid/content/Context; Landroid/app/ActivityManager; Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator$ScreenDimensions;)V (0x11a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/prefill/BitmapPreFillRunner;->allocate()Z (0x124) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x52) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x130) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x1b0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0xac) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x10e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x140) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x1c0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x214) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x282) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x2dc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/RecyclableBufferedInputStream;->fillbuf(Ljava/io/InputStream; [B)I (0xa4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/util/ByteArrayPool;->getBytes()[B (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView$DecodeFrameTask;->doInBackground([[B)Lcom/google/zxing/Result; (0xb8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/imagelib/log/LoggerDefault;->d(Ljava/lang/String; Ljava/lang/String;)I (0x0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x58) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0xae) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x104) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/push/utils/LogUtil;->debug(Ljava/lang/String;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/weibo/sdk/utils/LogUtil;->d(Ljava/lang/String; Ljava/lang/String;)V (0xa6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->d(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/Object;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->setOutputStream(Ljava/io/InputStream; Ljava/io/OutputStream; Ljava/lang/String; Ljava/lang/String; I)V (0x114) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onFail(Ljava/lang/Exception; Ljava/lang/Object;)V (0x34) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onSuccess(Ljava/lang/String; Ljava/lang/Object;)V (0x2c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x80) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x9e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->deleteDraft(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reEdit(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->rePost(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->responseCompose(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->onResume()V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reloadAll()V (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0x112) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x158) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x102) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x168) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->handleRelease()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->signalEndOfInputStream()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0x70) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->array([Ljava/lang/Object;)V (0x3a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->d(Ljava/lang/String;)V (0x32) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->onClick(Landroid/view/View;)V (0x150) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->prepareVideo()V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0x1c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0xd4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xdc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x134) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x120) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->inject(Ljava/lang/Object; Ljava/lang/Object; Lbutterknife/ButterKnife$Finder;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->reset(Ljava/lang/Object;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/Glide;->buildModelLoader(Ljava/lang/Class; Ljava/lang/Class; Landroid/content/Context;)Lcom/bumptech/glide/load/model/ModelLoader; (0x1e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x78) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0xd6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x17a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifencoder/AnimatedGifEncoder;->getImagePixels()V (0x1a0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/data/HttpUrlFetcher;->getStreamForSuccessfulRequest(Ljava/net/HttpURLConnection;)Ljava/io/InputStream; (0x7c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/CacheLoader;->load(Lcom/bumptech/glide/load/Key; Lcom/bumptech/glide/load/ResourceDecoder; I I)Lcom/bumptech/glide/load/engine/Resource; (0x3c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/EngineRunnable;->decodeFromCache()Lcom/bumptech/glide/load/engine/Resource; (0x5e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimToSize(I)V (0xc4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->clearMemory()V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->getDirty(I I Landroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap; (0x60) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimMemory(I)V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator;-><init>(Landroid/content/Context; Landroid/app/ActivityManager; Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator$ScreenDimensions;)V (0x11a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/prefill/BitmapPreFillRunner;->allocate()Z (0x124) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x52) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x130) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x1b0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0xac) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x10e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x140) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x1c0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x214) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x282) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x2dc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/RecyclableBufferedInputStream;->fillbuf(Ljava/io/InputStream; [B)I (0xa4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/util/ByteArrayPool;->getBytes()[B (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView$DecodeFrameTask;->doInBackground([[B)Lcom/google/zxing/Result; (0xb8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/imagelib/log/LoggerDefault;->d(Ljava/lang/String; Ljava/lang/String;)I (0x0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x58) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0xae) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x104) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/push/utils/LogUtil;->debug(Ljava/lang/String;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/weibo/sdk/utils/LogUtil;->d(Ljava/lang/String; Ljava/lang/String;)V (0xa6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->d(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/Object;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->setOutputStream(Ljava/io/InputStream; Ljava/io/OutputStream; Ljava/lang/String; Ljava/lang/String; I)V (0x114) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onFail(Ljava/lang/Exception; Ljava/lang/Object;)V (0x34) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onSuccess(Ljava/lang/String; Ljava/lang/Object;)V (0x2c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x80) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x9e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->deleteDraft(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reEdit(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->rePost(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->responseCompose(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->onResume()V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reloadAll()V (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0x112) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x158) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x102) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x168) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->handleRelease()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->signalEndOfInputStream()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0x70) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->array([Ljava/lang/Object;)V (0x3a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->d(Ljava/lang/String;)V (0x32) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->onClick(Landroid/view/View;)V (0x150) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->prepareVideo()V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0x1c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0xd4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xdc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x134) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x120) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->inject(Ljava/lang/Object; Ljava/lang/Object; Lbutterknife/ButterKnife$Finder;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->reset(Ljava/lang/Object;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/Glide;->buildModelLoader(Ljava/lang/Class; Ljava/lang/Class; Landroid/content/Context;)Lcom/bumptech/glide/load/model/ModelLoader; (0x1e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x78) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0xd6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x17a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifencoder/AnimatedGifEncoder;->getImagePixels()V (0x1a0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/data/HttpUrlFetcher;->getStreamForSuccessfulRequest(Ljava/net/HttpURLConnection;)Ljava/io/InputStream; (0x7c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/CacheLoader;->load(Lcom/bumptech/glide/load/Key; Lcom/bumptech/glide/load/ResourceDecoder; I I)Lcom/bumptech/glide/load/engine/Resource; (0x3c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/EngineRunnable;->decodeFromCache()Lcom/bumptech/glide/load/engine/Resource; (0x5e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimToSize(I)V (0xc4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->clearMemory()V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->getDirty(I I Landroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap; (0x60) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimMemory(I)V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator;-><init>(Landroid/content/Context; Landroid/app/ActivityManager; Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator$ScreenDimensions;)V (0x11a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/prefill/BitmapPreFillRunner;->allocate()Z (0x124) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x52) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x130) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x1b0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0xac) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x10e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x140) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x1c0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x214) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x282) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x2dc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/RecyclableBufferedInputStream;->fillbuf(Ljava/io/InputStream; [B)I (0xa4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/util/ByteArrayPool;->getBytes()[B (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView$DecodeFrameTask;->doInBackground([[B)Lcom/google/zxing/Result; (0xb8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/imagelib/log/LoggerDefault;->d(Ljava/lang/String; Ljava/lang/String;)I (0x0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x58) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0xae) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x104) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/push/utils/LogUtil;->debug(Ljava/lang/String;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/weibo/sdk/utils/LogUtil;->d(Ljava/lang/String; Ljava/lang/String;)V (0xa6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->d(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/Object;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->setOutputStream(Ljava/io/InputStream; Ljava/io/OutputStream; Ljava/lang/String; Ljava/lang/String; I)V (0x114) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onFail(Ljava/lang/Exception; Ljava/lang/Object;)V (0x34) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onSuccess(Ljava/lang/String; Ljava/lang/Object;)V (0x2c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x80) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x9e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->deleteDraft(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reEdit(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->rePost(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->responseCompose(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->onResume()V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reloadAll()V (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0x112) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x158) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x102) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x168) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->handleRelease()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->signalEndOfInputStream()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0x70) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->array([Ljava/lang/Object;)V (0x3a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->d(Ljava/lang/String;)V (0x32) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->onClick(Landroid/view/View;)V (0x150) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->prepareVideo()V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0x1c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbolts/MeasurementEvent;->sendBroadcast()V (0xd4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xdc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findInjectorForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x134) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x66) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->findResettersForClass(Ljava/lang/Class;)Ljava/lang/reflect/Method; (0x120) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->inject(Ljava/lang/Object; Ljava/lang/Object; Lbutterknife/ButterKnife$Finder;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lbutterknife/ButterKnife;->reset(Ljava/lang/Object;)V (0x42) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/Glide;->buildModelLoader(Ljava/lang/Class; Ljava/lang/Class; Landroid/content/Context;)Lcom/bumptech/glide/load/model/ModelLoader; (0x1e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x78) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0xd6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifdecoder/GifDecoder;->getNextFrame()Landroid/graphics/Bitmap; (0x17a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/gifencoder/AnimatedGifEncoder;->getImagePixels()V (0x1a0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/data/HttpUrlFetcher;->getStreamForSuccessfulRequest(Ljava/net/HttpURLConnection;)Ljava/io/InputStream; (0x7c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/CacheLoader;->load(Lcom/bumptech/glide/load/Key; Lcom/bumptech/glide/load/ResourceDecoder; I I)Lcom/bumptech/glide/load/engine/Resource; (0x3c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/EngineRunnable;->decodeFromCache()Lcom/bumptech/glide/load/engine/Resource; (0x5e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimToSize(I)V (0xc4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->clearMemory()V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->getDirty(I I Landroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap; (0x60) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/bitmap_recycle/LruBitmapPool;->trimMemory(I)V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator;-><init>(Landroid/content/Context; Landroid/app/ActivityManager; Lcom/bumptech/glide/load/engine/cache/MemorySizeCalculator$ScreenDimensions;)V (0x11a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/engine/prefill/BitmapPreFillRunner;->allocate()Z (0x124) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x52) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x130) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->getExifSegment()[B (0x1b0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0xac) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x10e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x140) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x1c0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x214) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x282) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser;->parseExifSegment(Lcom/bumptech/glide/load/resource/bitmap/ImageHeaderParser$RandomAccessReader;)I (0x2dc) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/load/resource/bitmap/RecyclableBufferedInputStream;->fillbuf(Ljava/io/InputStream; [B)I (0xa4) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/bumptech/glide/util/ByteArrayPool;->getBytes()[B (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView$DecodeFrameTask;->doInBackground([[B)Lcom/google/zxing/Result; (0xb8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/dlazaro66/qrcodereaderview/QRCodeReaderView;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/imagelib/log/LoggerDefault;->d(Ljava/lang/String; Ljava/lang/String;)I (0x0) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x58) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0xae) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/jude/easyrecyclerview/adapter/DefaultEventDelegate$EventFooter;->refreshStatus(Landroid/view/ViewGroup;)Landroid/view/View; (0x104) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/push/utils/LogUtil;->debug(Ljava/lang/String;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/sina/weibo/sdk/utils/LogUtil;->d(Ljava/lang/String; Ljava/lang/String;)V (0xa6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->d(Ljava/lang/String; Ljava/lang/String; [Ljava/lang/Object;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/tencent/mm/sdk/platformtools/Log;->setOutputStream(Ljava/io/InputStream; Ljava/io/OutputStream; Ljava/lang/String; Ljava/lang/String; I)V (0x114) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onFail(Ljava/lang/Exception; Ljava/lang/Object;)V (0x34) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1$1;->onSuccess(Ljava/lang/String; Ljava/lang/Object;)V (0x2c) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x80) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/WApplication$3$1;->run()V (0x9e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->deleteDraft(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reEdit(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->rePost(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->responseCompose(Lcom/weico/international/adapter/DraftsAdapter$DraftWrapper;)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->onResume()V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/DraftsActivity;->reloadAll()V (0x24) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0xa) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceChanged(Landroid/view/SurfaceHolder; I I I)V (0x112) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceCreated(Landroid/view/SurfaceHolder;)V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/activity/v4/CameraPreview;->surfaceDestroyed(Landroid/view/SurfaceHolder;)V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x1a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0xc8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/adapter/DraftsAdapter;->setDraft(Ljava/util/List; Ljava/util/List;)V (0x158) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x102) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->drainEncoder()V (0x168) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->handleRelease()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaEncoder;->signalEndOfInputStream()V (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x8) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->selectAudioCodec(Ljava/lang/String;)Landroid/media/MediaCodecInfo; (0x94) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0x70) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/camera/encoder/MediaAudioEncoder;->prepare()V (0xe6) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->array([Ljava/lang/Object;)V (0x3a) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/utility/LogUtil;->d(Ljava/lang/String;)V (0x32) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->onClick(Landroid/view/View;)V (0x150) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+               => Lcom/weico/international/video/JCVideoPlayerWeico;->prepareVideo()V (0x3e) ---> Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I
+[低危]  AndroidManifest组件暴露检测:
+           Activity、activity-alias、service、receiver组件对外暴露会导致数据泄露和恶意DoS攻击。在AndroidManifest.xml文件中如果应用的组件android:exported属性显式指定为“true”，或者虽然没有显式指定为“true”或“false”，但是有intent-filter并指定了相应的Action，则此组件为导出的组件。（为确认实际风险，建议人工手动确认）。漏洞详情参考：http://01hackcode.com/wiki/7.1
+                 activity => com.sina.weibo.sdk.share.WbShareTransActivity
+                  service => com.weico.international.service.MyFirebaseMessagingService
+                  service => com.weico.international.service.MyFirebaseInstanceIDService
+                  service => com.sina.push.service.SinaPushService
+                 receiver => com.weico.international.service.SDKMsgReceiver
+                 receiver => com.weico.international.service.CancelSendReceiver
+[低危]  WebView密码明文存储漏洞检测:
+           该app的WebView组件未设置关闭自动保存密码功能。Android的WebView组件默认打开了提示用户是否保存密码的功能，若用户选择保存，用户名和密码将被明文存储到该/data/data/[应用名]/databases/webview.db文件中。其他恶意程序可能通过漏洞访问该应用的WebView数据库，导致用户密码泄露。
+               Lbolts/WebViewAppLinkResolver$2;->then(Lbolts/Task;)Lbolts/Task;
+               Lcom/weico/international/activity/WebviewActivity;->setWebViewSettings()V
+[低危]  WebView潜在XSS漏洞检测:
+           WebView允许执行JavaScript(setJavaScriptEnabled(true))，可能导致XSS攻击。
+               => Lbolts/WebViewAppLinkResolver$2;->then(Lbolts/Task;)Lbolts/Task; (0x2c) ---> Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V
+               => Lcom/sina/weibo/sdk/web/WeiboSdkWebActivity;->initWebView()V (0x4e) ---> Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V
+               => Lcom/weico/international/activity/WebviewActivity;->setWebViewSettings()V (0x18) ---> Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V
+[提示]  非HTTPs的URL检测:
+           未使用HTTPs的URL (共:52):
+               http://10.13.112.143
+                   => Lcom/sina/weibo/netcore/b/d;-><init>(Lcom/sina/weibo/netcore/WeiboNetCore;)V
+                   => Lcom/sina/weibo/netcore/b/e;-><init>(Lcom/sina/weibo/netcore/WeiboNetCore;)V
+               http://192.168.1.188:9000
+                   => Lcom/weibo/sdk/android/api/WeicoRetrofitAPI;-><clinit>()V
+               http://abroad.apilocate.amap.com/mobile/binary
+                   => Lcom/loc/f;->a(Landroid/content/Context;)V
+                   => Lcom/loc/cm;->a(Landroid/content/Context; Lorg/json/JSONObject; [B Ljava/lang/String; Z)Lcom/loc/bo;
+               http://admin.weico.cc/portal.php?c=user&a=save_token&
+                   => Lcom/weico/international/activity/setting/SettingActivity;->innerDebug()V
+               http://api.weibo.cn/2/client/common_config
+                   => Lcom/sina/weibo/sdk/cmd/WbAppActivator;->requestCmdInfo(Landroid/content/Context; Ljava/lang/String;)Ljava/lang/String;
+               http://api.weibo.cn/2/push/register
+                   => Lcom/sina/push/c/a/b;->run()V
+               http://api.weibo.com/2/short_url/expand.json?
+                   => Lcom/weico/international/utility/Utils;->getLongLinks(Ljava/util/List; Lcom/weico/international/model/weico/ShortLongLinks$OnLongLinkRequestFinish;)V
+               http://apilocate.amap.com/mobile/binary
+                   => Lcom/loc/f;-><clinit>()V
+               http://apilocatesrc.amap.com/mobile/binary
+                   => Lcom/loc/f;-><clinit>()V
+               http://apiv3weico.weico.cc:10001
+                   => Lcom/weibo/sdk/android/api/WeicoRetrofitAPI;-><clinit>()V
+               http://c.isdspeed.qq.com/code.cgi
+                   => Lcom/qq/e/comm/services/RetCodeService;->a(Lcom/qq/e/comm/services/RetCodeService; Lcom/qq/e/comm/services/RetCodeService$RetCodeInfo; I)V
+               http://cgicol.amap.com/collection/writedata?ver=v1.0_ali&
+                   => Lcom/loc/bu;->a(Lcom/loc/bu; I)V
+               http://data.flurry.com/aap.do
+                   => Lcom/flurry/sdk/jr;->a([B Ljava/lang/String; Ljava/lang/String;)V
+               http://down.apps.sina.cn/sinasrc/
+                   => Lcom/weico/international/activity/WebviewActivity$MyWebClient;->shouldOverrideUrlLoading(Landroid/webkit/WebView; Ljava/lang/String;)Z
+               http://kylin.im.weibo.cn:80/tunnel
+                   => Lcom/sina/weibo/netcore/Utils/HostProvider$a;-><clinit>()V
+               http://log.weico.cc
+                   => Lcom/weibo/sdk/android/api/WeicoRetrofitAPI;-><clinit>()V
+               http://logs.amap.com/ws/log/upload?product=%s&type=%s&platform=%s&channel=%s&sign=%s
+                   => Lcom/loc/u;-><clinit>()V
+               http://m.weibo.cn/
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->startWeiboDetailPage(Ljava/lang/String; Ljava/lang/String; Z)V
+               http://m.weibo.cn/comment?
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->commentWeibo(Ljava/lang/String; Z)V
+               http://m.weibo.cn/index/router?
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->gotoMyProfile(Z)V
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->gotoMyHomePage(Z)V
+               http://m.weibo.cn/main/pages/index?
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->openWeiboSearchPage(Ljava/lang/String; Z)V
+               http://m.weibo.cn/mblog?
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->shareToWeibo(Ljava/lang/String; Z)V
+               http://m.weibo.cn/p/%s/super_index?jumpfrom=weibocom
+                   => Lcom/weico/international/adapter/TimeLineRecyclerAdapter$19;->onClick(Landroid/view/View;)V
+               http://m.weibo.cn/setting/forgotpwd?vt=4&wm=ig_0001_index
+                   => Lcom/weico/international/utility/KeyUtil;-><clinit>()V
+               http://m.weibo.cn/u/
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->startUserMainPage(Ljava/lang/String; Z)V
+               http://media.weibo.cn/article?
+                   => Lcom/sina/weibo/sdk/web/WeiboPageUtils;->startWeiboTopPage(Ljava/lang/String; Z)V
+               http://media.weibo.cn/article?id=
+                   => Lcom/weico/international/adapter/TimeLineRecyclerAdapter$8;->click(Landroid/view/View;)V
+               http://multimedia.api.weibo.com
+                   => Lcom/weibo/sdk/android/api/SinaRetrofitAPI;-><clinit>()V
+               http://overseas.weico.cc
+                   => Lcom/weibo/sdk/android/api/WeicoRetrofitAPI;-><clinit>()V
+               http://overseas.weico.cc/portal.php?ct=feed&a=faq
+                   => Lcom/weico/international/activity/v4/MsgActivity$8;->onClick(Landroid/view/View;)V
+               http://restapi.amap.com
+                   => Lcom/loc/q;->a(Landroid/content/Context;)Ljava/net/Proxy;
+               http://restapi.amap.com/v3/config/district?
+                   => Lcom/loc/a;->f(Landroid/os/Bundle;)V
+               http://restapi.amap.com/v3/geocode/regeo
+                   => Lcom/loc/bu;->a(D D)Lcom/autonavi/aps/amapapi/model/AMapLocationServer;
+               http://restapi.amap.com/v3/place/around?
+                   => Lcom/loc/a;->d(Landroid/os/Bundle;)V
+               http://restapi.amap.com/v3/place/text?
+                   => Lcom/loc/a;->e(Landroid/os/Bundle;)V
+               http://s.weibo.com
+                   => Lcom/weibo/sdk/android/api/SinaRetrofitAPI;-><clinit>()V
+               http://sdk.e.qq.com/activate
+                   => Lcom/qq/e/comm/services/a;->a(Landroid/content/Context; Lcom/qq/e/comm/managers/setting/SM; Lcom/qq/e/comm/managers/plugin/PM; Lcom/qq/e/comm/managers/status/DeviceStatus; Lcom/qq/e/comm/managers/status/APPStatus; J)V
+               http://sdk.e.qq.com/err
+                   => Lcom/qq/e/comm/services/a;->a(Ljava/lang/String; Ljava/lang/Throwable;)V
+               http://sdk.e.qq.com/launch
+                   => Lcom/qq/e/comm/services/a;->a(Landroid/content/Context; Lcom/qq/e/comm/managers/setting/SM; Lcom/qq/e/comm/managers/plugin/PM; Lcom/qq/e/comm/managers/status/DeviceStatus; Lcom/qq/e/comm/managers/status/APPStatus; J)V
+               http://service.account.weibo.com/reportspamobile?rid=%s&type=1&from=20000
+                   => Lcom/weico/international/utility/ActivityUtils;->report(Landroid/content/Context; J)V
+               http://service.weibo.com/share/mobilesdk.php
+                   => Lcom/sina/weibo/sdk/web/param/ShareWebViewRequestParam;->getRequestUrl()Ljava/lang/String;
+               http://service.weibo.com/share/mobilesdk_uppic.php
+                   => Lcom/sina/weibo/sdk/web/param/ShareWebViewRequestParam;->doExtraTask(Lcom/sina/weibo/sdk/web/param/BaseWebViewRequestParam$ExtraTaskCallback;)V
+               http://translate.google.cn/translate_a/single?client=t&tl=
+                   => Lcom/weico/international/utility/Utils;->translateStatus(Lcom/weico/international/model/sina/Status; Lcom/weico/international/flux/Func; Z)V
+                   => Lcom/weico/international/utility/Utils;->translateComment(Lcom/weico/international/model/sina/Comment; Lcom/weico/international/flux/Func;)V
+               http://us.sinaimg.cn/00034yxpjx07397mOdqv050d0100017I0k01.m3u8?KID=unistore,video&Expires=1468477058&ssig=BRKJC5t3z0
+                   => Lcom/weico/international/adapter/TimeLineRecyclerAdapter;->buildVideo(Lcom/weico/international/model/sina/Status; Lcom/weico/international/model/sina/PageInfo; Lcom/weico/international/activity/v4/ViewHolder; I)Lcom/weico/international/video/JCVideoPlayerWeico;
+                   => Lcom/weico/international/activity/detail/StatusDetailSeaActivity;->buildVideo(Lcom/weico/international/model/sina/Status; Lcom/weico/international/model/sina/PageInfo; Lcom/weico/international/activity/v4/ViewHolder;)Lcom/weico/international/video/JCVideoPlayerWeico;
+               http://weibo.cn/dpool/ttt/h5/reg.php
+                   => Lcom/weico/international/utility/KeyUtil;-><clinit>()V
+               http://weibo.cn/qr/userinfo?uid=%s
+                   => Lcom/weico/international/activity/profile/QrcodeActivity;->initView()V
+               http://weibo\.com/(\w)+$
+                   => Lcom/weico/international/utility/Utils;->initRulesIfEmpty()Ljava/util/List;
+               http://weico3.weico.cc
+                   => Lcom/weibo/sdk/android/api/WeicoRetrofitAPI;-><clinit>()V
+               http://weicoapi.weico.cc
+                   => Lcom/weibo/sdk/android/api/WeicoRetrofitAPI;-><clinit>()V
+               http://wspeed.qq.com/w.cgi
+                   => Lcom/qq/e/comm/services/RetCodeService;->a(Lcom/qq/e/comm/services/RetCodeService; Lcom/qq/e/comm/services/RetCodeService$RetCodeInfo; I)V
+               http://www.sina.com
+                   => Lcom/weico/international/WApplication;->onCreate()V
+               http://www.weico.com
+                   => Lcom/weico/international/activity/WebviewActivity;->init()V
+------------------------------------------------------------
+分析用时: 14.370603 秒
+载入VM用时: 65.805177 秒
+总耗时: 80.17578 秒
